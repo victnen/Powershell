@@ -1,3 +1,19 @@
+###
+# Copyright 2017 University of Minnesota, Office of Information Technology
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+
 #region Connect-VMWareRASession
 function Connect-VMWareRASession {
     <#
@@ -1553,7 +1569,7 @@ function New-VMWareRATagCategory {
         id of object, for example if its a vm, use Get-VMWareRAVMID -vCenter $vCenter -sessionID $sessionID -computer $computer to get its id
     
     .EXAMPLE
-        
+       New-VMWareRATagCategory -vCenter fr-qualif-vc1B -sessionID $session -Cardinality Single -Name Cluster_Type -Description "Cluster typologie" -EntityType Datastore,VirtualMachine 
                   
     .OUTPUTS
         JSON data of ids/types
@@ -1567,13 +1583,12 @@ function New-VMWareRATagCategory {
         [string]$sessionID,
         [Parameter(Mandatory)][ValidateSet("Single","Multiple")]
         [string]$Cardinality,
-        [Parameter(Mandatory)][ValidateSet("VMHost","VirtualMachine","")]
+        [ValidateSet("HostSystem","VirtualMachine","ClusterComputeResource","Datacenter","Datastore","StoragePod", "HostNetwork","VmwareDistributedVirtualSwitch","DistributedVirtualSwitch","Folder","ResourcePool","VirtualApp","Network","DistributedVirtualPortgroup")]
         [string[]]$EntityType,
         [Parameter(Mandatory)]
         [string]$Name,
         [string]$Description
     )
-
     Begin
     {
       $url = "https://$vCenter/rest/com/vmware/cis/tagging/category"
@@ -1584,7 +1599,7 @@ function New-VMWareRATagCategory {
         If ((Get-VMWareRATagCategory -vCenter $vCenter -sessionID $sessionID -category $Name).Name -ne $name)
         {
           $json = @{"create_spec" = @{"cardinality"=$cardinality.ToUpper();"associable_types"=@($EntityType);"name"=$Name;"description"=$description}} | ConvertTo-Json -Depth 32
-          return (Invoke-WebRequest -Uri $url -Method Post -Body $json -Headers @{'vmware-api-session-id'=$sessionID} -ContentType 'application/json' -UseBasicParsing).StatusCode
+          return (Invoke-WebRequest -Uri $url -Method Post -Body $json -Headers @{'vmware-api-session-id'=$sessionID} -ContentType 'application/json' -UseBasicParsing)
         }Else
         {
           Write-warning "Category already exist"
@@ -1711,9 +1726,7 @@ function New-VMWareRATagAssignement
         [Parameter(Mandatory=$false)]
         [String]$Category,
         [Parameter(Mandatory=$true)]
-        [String[]]$Entity,
-        [Parameter(Mandatory=$true)][ValidateSet('VirtualMachine')]
-        [String]$ObjectType
+        [String[]]$Entity
     )
     
     Process
@@ -1729,8 +1742,23 @@ function New-VMWareRATagAssignement
         {
           ## Construct url
           $url = "https://$vCenter/rest/com/vmware/cis/tagging/tag-association/id:$($tagId)?~action=attach"
-          $Entity = foreach($ent in $Entity)
+          foreach($ent in $Entity)
           {
+              Switch -regex ($ent)
+              {
+               "^vm-"
+               {
+                  $ObjectType = "VirtualMachine"
+               }
+               "^host-"
+               {
+                  $ObjectType = "HostSystem"
+               }
+               "^domain-"
+               {
+                  $ObjectType = "ClusterComputeResource"
+               }
+              }
               $json = @{"object_id" = @{"type"=$ObjectType;"id"=$ent}} | ConvertTo-Json -Depth 32
               $return = Invoke-WebRequest -Uri $url -Method Post -Body $json -Headers @{'vmware-api-session-id'=$sessionID} -ContentType 'application/json' -UseBasicParsing
           }
