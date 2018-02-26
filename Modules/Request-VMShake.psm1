@@ -10,7 +10,7 @@ function Request-VMShake {
         Cluster on which perform the VMShake
         
     .EXAMPLE
-        Request-VMShake -Cluster CLUS73_CUB200_LAB_BSZ_COMPUTE    
+        Request-VMShake -Cluster <ClusterName>    
                   
     .OUTPUTS
         Boolean
