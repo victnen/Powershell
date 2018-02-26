@@ -59,6 +59,7 @@ function Stop-VMGuestForce {
          Write-Warning "$($TheVM.name) : VM is not running, Skipping." 
       }     
    }
+   Return $True
   }Catch
   {
     $ErrorMessage = $_.Exception.Message
