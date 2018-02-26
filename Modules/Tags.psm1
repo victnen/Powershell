@@ -889,8 +889,23 @@ function Get-VMWareRATagCategory {
         $url = "https://$vCenter/rest/com/vmware/cis/tagging/category"
         $return = Invoke-WebRequest -Uri $url -Method Get -Headers @{'vmware-api-session-id'=$sessionID} -ContentType 'application/json' -UseBasicParsing
         $categorys = ($return.Content | ConvertFrom-Json).value
-        if ($category){$categorys | ForEach-Object {if (((Get-VMWareRATagCategoryByID -vCenter $vCenter -sessionID $sessionID -categoryID $_).Name) -eq $category){return (Get-VMWareRATagCategoryByID -vCenter $vCenter -sessionID $sessionID -categoryID $_);break}}}
-        else{$categorys | ForEach-Object {return (Get-VMWareRATagCategoryByID -vCenter $vCenter -sessionID $sessionID -categoryID $_)}}
+        if ($category)
+        {
+            $categorys | ForEach-Object{
+               $return = (Get-VMWareRATagCategoryByID -vCenter $vCenter -sessionID $sessionID -categoryID $_)
+               if ($return.Name -eq $category)
+               {
+                  return $return
+                  ;break
+               }
+            }
+        }
+        else
+        {
+         $categorys | ForEach-Object{
+            return (Get-VMWareRATagCategoryByID -vCenter $vCenter -sessionID $sessionID -categoryID $_)
+         }
+        }
     }
     End
     {
