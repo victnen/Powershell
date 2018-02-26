@@ -14,6 +14,8 @@ function Request-VMShake {
                   
     .OUTPUTS
         Boolean
+    .Notes
+        Author: Vincent Gitton
 #>
 [CmdletBinding()]
     Param
