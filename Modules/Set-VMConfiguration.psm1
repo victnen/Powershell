@@ -13,8 +13,12 @@ function Set-VMConfiguration {
           Target OS GuestId
           See http://www.fatpacket.com/blog/2016/12/vm-guestos-identifiers/ 
           
-      .PARAMETER GuestId
-          Target Virtual Hardware    
+      .PARAMETER HWVersion
+          Target Virtual Hardware
+          
+      .PARAMETER CPUHotAdd
+          True if CPUHotAdd should be activated
+          False if it does not       
           
       .EXAMPLE
           Set-VMConfiguration -VM <VM1>,<VM2> -GuestID rhel7_64Guest -HWVersion v11     
@@ -34,6 +38,8 @@ function Set-VMConfiguration {
           [string]$GuestId,
           [Parameter(Mandatory=$false)][ValidateSet('v9','v11')]
           [string]$HWVersion,
+          [Parameter(Mandatory=$false)][ValidateSet('True','False')]
+          [String]$CPUHotAdd,
           [switch]$Force
       ) 
   Try
@@ -81,6 +87,24 @@ function Set-VMConfiguration {
                Write-Output "$($TheVM.Name) : Reconfigure GuestId"
                $Task = $TheVM | Set-VM -GuestId $GuestID -Confirm:$false -RunAsync
                $TaskResult = Wait-Task $task   
+            }
+            If ($CPUHotAdd)
+            {
+               Write-Output "$($TheVM.Name) : Reconfigure vCPU Hot Add"
+               $vmView = Get-View $TheVM
+               $vmConfigSpec = New-Object VMware.Vim.VirtualMachineConfigSpec
+               $extra = New-Object VMware.Vim.optionvalue
+               $extra.Key="vcpu.hotadd"
+               If ($CPUHotAdd -eq $False)
+               {
+                  $extra.Value="false"
+               }Else
+               {
+                  $extra.Value="true"
+               }
+               $vmConfigSpec.extraconfig += $extra
+               $vmview.ReconfigVM($vmConfigSpec)
+               
             }
             If ($Flag)
             {
