@@ -10,12 +10,10 @@ function Request-VMShake {
         Cluster on which perform the VMShake
         
     .EXAMPLE
-        Request-VMShake -Cluster <ClusterName>    
+        Request-VMShake -Cluster CLUS73_CUB200_LAB_BSZ_COMPUTE    
                   
     .OUTPUTS
         Boolean
-    .Notes
-        Author: Vincent Gitton
 #>
 [CmdletBinding()]
     Param
@@ -39,11 +37,11 @@ Try
     Get-DrsRecommendation -Cluster $cluster
     Get-DrsRecommendation -Cluster $cluster | where {$_.Reason -eq "Host is entering maintenance mode"} | Apply-DrsRecommendation
     $vmhost = Wait-Task $task
-    Return $true
   }
+  Return $true
   Write-Output "End Of Script"
 }Catch
 {
   Return $false
+} 
 }
- 
